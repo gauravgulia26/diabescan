@@ -19,3 +19,6 @@ typer
 ucimlrepo
 ipykernel
 coloredlogs
+python-box
+ensure
+pydantic

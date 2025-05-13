@@ -1,11 +1,13 @@
-from src.logger.custom_logger import CreateLogger
-from src.exceptions.CustomException import CustomException
+# from src.utils.common import DataUtils
+# from src.exceptions.CustomException import CustomException
 
-logger = CreateLogger().initialise()
+# utilities = DataUtils()
+# try:
+#     X,y = utilities.load_data_uciml(repo_id=529)
 
-try:
-    3 / 0
-except ZeroDivisionError as e:
-    err = CustomException(error_message=e).log_exception()
-else:
-    print('OKAY')
+# except ValueError as e:
+#     err = CustomException(error_message=e).log_exception()
+# except Exception as e:
+#     err = CustomException(error_message=e).log_exception()
+# else:
+#     print(X)

@@ -1,0 +1,5 @@
+ARTIFICAT_DIR: 'data'
+data_ingestion:
+  root_dir: 'data/raw'
+  transformed_dir: 'data/processed'
+  Source_URL: null

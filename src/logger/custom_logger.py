@@ -1,24 +1,52 @@
 import os
 import logging
-from src.config import LOGS_DIRECTORY_PATH, LOGS_FILE_NAME
+from src.constants import *
+import coloredlogs
 
 
-class CreateLogger:
+class CustomLogger:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(CustomLogger, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self):
-        pass
+        if self._initialized:
+            return
 
-    def initialise(self):
+        self._initialized = True
+        self.logger = self._setup_logger()
 
+    def _setup_logger(self):
+        """Set up and configure the logger with both file and console handlers."""
         os.makedirs(LOGS_DIRECTORY_PATH, exist_ok=True)
 
-        # Configure the logger
-        logging.basicConfig(
-            filemode="w",  # Overwrites the file each time
-            filename=os.path.join(LOGS_DIRECTORY_PATH, LOGS_FILE_NAME),
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-        )
-
+        coloredlogs.install(level=logging.INFO)
+        # Create logger
         logger = logging.getLogger(__name__)
+        # logger.setLevel(logging.INFO)
+
+        # Create formatters
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+
+        # File handler - append mode
+        file_handler = logging.FileHandler(
+            os.path.join(LOGS_DIRECTORY_PATH, LOGS_FILE_NAME),
+            mode="a",  # Append mode instead of overwrite
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        # Console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
         return logger
+
+    def get_logger(self):
+        """Get the configured logger instance."""
+        return self.logger

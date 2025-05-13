@@ -1,11 +1,11 @@
-from src.logger.custom_logger import CreateLogger
+from src.logger.custom_logger import CustomLogger
 import sys
 import traceback
 
 
 class CustomException(Exception):
     def __init__(self, error_message):
-        self.logger = CreateLogger().initialise()
+        self.logger = CustomLogger().get_logger()
         super().__init__(error_message)
         self.error_message = error_message
 
