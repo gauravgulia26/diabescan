@@ -12,6 +12,7 @@ from box.exceptions import BoxValueError
 from ucimlrepo import fetch_ucirepo
 import pandas as pd
 from pydantic import BaseModel, validate_arguments
+from src.constants import TARGET_FEATURE
 
 logger = CustomLogger().get_logger()
 
@@ -143,3 +144,16 @@ class DataUtils(BaseModel):
             if "not a valid dataset id" in str(e).lower():
                 raise ValueError(f"Invalid repo_id: {repo_id}")
             raise e
+        
+    @staticmethod
+    @validate_arguments
+    def load_and_split_df(file_path:Path):
+        try:
+            df = pd.read_csv(file_path)
+        except FileNotFoundError as e:
+            logger.error(e)
+            raise e
+        X = df.drop(columns=TARGET_FEATURE)
+        y = df[TARGET_FEATURE]
+        return df,X,y
+        

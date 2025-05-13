@@ -50,3 +50,7 @@ class CustomLogger:
     def get_logger(self):
         """Get the configured logger instance."""
         return self.logger
+
+
+
+logger = CustomLogger().get_logger()

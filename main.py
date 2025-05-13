@@ -1,13 +1,12 @@
-# from src.utils.common import DataUtils
-# from src.exceptions.CustomException import CustomException
+from src.components.DataIngestion import DataIngestion
+from src.components.DataTransformation import TransformData
+from src.logger.custom_logger import logger
 
-# utilities = DataUtils()
-# try:
-#     X,y = utilities.load_data_uciml(repo_id=529)
-
-# except ValueError as e:
-#     err = CustomException(error_message=e).log_exception()
-# except Exception as e:
-#     err = CustomException(error_message=e).log_exception()
-# else:
-#     print(X)
+if __name__ == '__main__':
+    try:
+        ingest = DataIngestion().ingest_data()
+        transform = TransformData().InitiateTransformation()
+    except Exception as e:
+        logger.error(e)
+    else:
+        logger.info('Ingested and Transformation Pipeline built Successfully !!')
