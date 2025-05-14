@@ -34,3 +34,7 @@ TARGET_FEATURE = "class"
 
 RESULT_DIR = 'reports'
 RESULT_DIR_PATH = Path(os.path.join(CURRENT_PATH,RESULT_DIR))
+
+MODEL_NAME = 'BestModel.pkl'
+MODEL_DIR = 'models'
+MODEL_DIR_PATH = Path(os.path.join(CURRENT_PATH,MODEL_DIR,MODEL_NAME)) 
