@@ -22,3 +22,4 @@ coloredlogs
 python-box
 ensure
 pydantic
+xgboost

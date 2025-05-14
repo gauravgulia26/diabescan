@@ -32,4 +32,5 @@ TEST_PROCESSED_FILE_DIR = Path(
 
 TARGET_FEATURE = "class"
 
-CACHE_DIR_PATH = Path(os.path.join(CURRENT_PATH, "cachedir"))
+RESULT_DIR = 'reports'
+RESULT_DIR_PATH = Path(os.path.join(CURRENT_PATH,RESULT_DIR))

@@ -107,15 +107,23 @@ class TransformData(BaseModel):
         os.makedirs(TRAIN_PROCESSED_FILE_DIR, exist_ok=True)
         os.makedirs(TEST_PROCESSED_FILE_DIR, exist_ok=True)
         try:
-            train_df.to_csv(os.path.join(TRAIN_PROCESSED_FILE_DIR, TRAIN_PROCESSED_FILE_NAME),index=False)
-            test_df.to_csv(os.path.join(TEST_PROCESSED_FILE_DIR, TEST_PROCESSED_FILE_NAME),index=False)
+            train_df.to_csv(
+                os.path.join(TRAIN_PROCESSED_FILE_DIR, TRAIN_PROCESSED_FILE_NAME), index=False
+            )
+            test_df.to_csv(
+                os.path.join(TEST_PROCESSED_FILE_DIR, TEST_PROCESSED_FILE_NAME), index=False
+            )
         except Exception as e:
             logger.error(e)
         logger.info("Training Set and Testing set has been saved Successfully")
 
+        return train_df, test_df
+
     def InitiateTransformation(self):
         try:
-            self.SaveProcessedData()
+            train_df, test_df = self.SaveProcessedData()
         except Exception as e:
             logger.error(e)
-        logger.info("Transformation Finished Successfully !!")
+        else:
+            logger.info("Transformation Finished Successfully !!")
+            return train_df, test_df

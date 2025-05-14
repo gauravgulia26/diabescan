@@ -1,6 +1,6 @@
 from src.logger.custom_logger import CustomLogger
 from src.exceptions.CustomException import CustomException
-from src.constants import CURRENT_PATH, CFG_FILE_PATH, RAW_DATA_FILE_DIR, CACHE_DIR_PATH
+from src.constants import CURRENT_PATH, CFG_FILE_PATH, RAW_DATA_FILE_DIR
 from src.utils.common import DataUtils
 import pandas as pd
 import os
