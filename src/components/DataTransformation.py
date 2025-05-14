@@ -2,24 +2,27 @@ from src.logger.custom_logger import logger
 from src.exceptions.CustomException import CustomException
 from src.components.DataIngestion import DataIngestion
 from src.utils.common import DataUtils
-from src.constants import PROCESSED_FILE_DIR, RAW_DATA_FILE_DIR
+from src.constants import (
+    TRAIN_PROCESSED_FILE_DIR,
+    TEST_PROCESSED_FILE_DIR,
+    RAW_DATA_FILE_DIR,
+    TRAIN_PROCESSED_FILE_NAME,
+    TEST_PROCESSED_FILE_NAME,
+)
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OrdinalEncoder, LabelEncoder, OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, validate_arguments, ValidationError
 from typing import List, Any
+import numpy as np
 import os
 
 
 class TransformData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    file_url: Path = Field(
-        description="Path of the raw file after ingestion, must be a POSIX Path",
-        default=RAW_DATA_FILE_DIR,
-    )
     loader: DataUtils = Field(description="Loader to load Utilities Function", default=DataUtils())
 
     def read_data(self):
@@ -29,7 +32,7 @@ class TransformData(BaseModel):
             tuple: tuple[DataFrame,x,y]
         """
         logger.info("Reading and Splitting the data")
-        df, x, y = self.loader.load_and_split_df(self.file_url)
+        df, x, y = self.loader.load_and_split_df(RAW_DATA_FILE_DIR)
         return df, x, y
 
     def CreatePipeline(self):
@@ -58,26 +61,61 @@ class TransformData(BaseModel):
         )
         return trf
 
-    def InitiateTransformation(self):
+    def ApplyTransformation(self):
         trf = self.CreateColumnTransformer()
-        df,x,y = self.read_data()
+        return trf
+
+    def CreateDataframe(self):
+        trf = self.ApplyTransformation()
+        df, x, y = self.read_data()
         data = trf.fit_transform(df)
         labels = trf.get_feature_names_out()
-        logger.info('Transformation Applied Successfully !!')
-        trf_df = pd.DataFrame(data, columns=labels)
-        logger.info('Processed Data Saved Successfully !!')
+        logger.info("Transformation Applied Successfully !!")
+        trf_df = pd.DataFrame(data=data, columns=labels)
         le = LabelEncoder()
         trf_df["remainder__class"] = le.fit_transform(trf_df["remainder__class"])
+        logger.info("Processed Dataframe Created Successfully")
+        return trf_df
+
+    def SplitData(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+        trf_df = self.CreateDataframe()
+        X = trf_df.drop(columns=trf_df.columns[-1])
+        y = trf_df[trf_df.columns[-1]]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+        logger.info("Data Successfully Splitted into Training and Testing Set")
+        return X_train, X_test, y_train, y_test
+
+    def ApplyScaling(self):
+        X_train, X_test, y_train, y_test = self.SplitData()
+        scaler = StandardScaler()
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+        logger.info("Scaling Applied Successfully")
+
+        return X_train, X_test, y_train, y_test
+
+    def CreateTrainTestSet(self):
+        X_train, X_test, y_train, y_test = self.ApplyScaling()
+        training_set = pd.DataFrame(np.hstack([X_train, y_train.values.reshape(-1, 1)]))
+        test_set = pd.DataFrame(np.hstack([X_test, y_test.values.reshape(-1, 1)]))
+        logger.info("Train Test df created Successfully !!")
+
+        return training_set, test_set
+
+    def SaveProcessedData(self):
+        train_df, test_df = self.CreateTrainTestSet()
+        os.makedirs(TRAIN_PROCESSED_FILE_DIR, exist_ok=True)
+        os.makedirs(TEST_PROCESSED_FILE_DIR, exist_ok=True)
         try:
-            trf_df.to_csv(PROCESSED_FILE_DIR)
+            train_df.to_csv(os.path.join(TRAIN_PROCESSED_FILE_DIR, TRAIN_PROCESSED_FILE_NAME),index=False)
+            test_df.to_csv(os.path.join(TEST_PROCESSED_FILE_DIR, TEST_PROCESSED_FILE_NAME),index=False)
         except Exception as e:
             logger.error(e)
-        else:
-            X = trf_df.drop(columns=trf_df.columns[-1])
-            y = trf_df["remainder__class"]
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-            scaler = StandardScaler()
-            logger.info('Applying Feature Scaling')
-            X_train = scaler.fit_transform(X_train)
-            X_test = scaler.transform(X_test)
-            logger.info('Transformation Finished Successfully !!')
+        logger.info("Training Set and Testing set has been saved Successfully")
+
+    def InitiateTransformation(self):
+        try:
+            self.SaveProcessedData()
+        except Exception as e:
+            logger.error(e)
+        logger.info("Transformation Finished Successfully !!")

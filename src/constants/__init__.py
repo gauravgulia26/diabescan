@@ -21,9 +21,15 @@ CFG_FILE_PATH = Path(os.path.join(CURRENT_PATH, "config", CFG_FILE_NAME))
 RAW_DATA_FILE_NAME = "raw.csv"
 RAW_DATA_FILE_DIR = Path(os.path.join(CURRENT_PATH, "data/raw", RAW_DATA_FILE_NAME))
 
-PROCESSED_FILE_NAME = "processed.csv"
-PROCESSED_FILE_DIR = Path(os.path.join(CURRENT_PATH, "data/processed", PROCESSED_FILE_NAME))
+TRAIN_PROCESSED_FILE_NAME = "train.csv"
+TEST_PROCESSED_FILE_NAME = "test.csv"
+TRAIN_PROCESSED_FILE_DIR = Path(
+    os.path.join(CURRENT_PATH, "data/processed/train")
+)
+TEST_PROCESSED_FILE_DIR = Path(
+    os.path.join(CURRENT_PATH, "data/processed/test")
+)
 
-TARGET_FEATURE = 'class'
+TARGET_FEATURE = "class"
 
 CACHE_DIR_PATH = Path(os.path.join(CURRENT_PATH, "cachedir"))
