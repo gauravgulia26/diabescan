@@ -112,10 +112,11 @@ class ModelTrainer:
 
         logger.info(f"Training Completed, Best Model is {self.get_best_model_name()}")
         self.get_results()
-        logger.info("Saving the Model in Disk !!")
-        self._save_best_model()
+        logger.info('Procedding to Tune Best Model')
+        # logger.info("Saving the Model in Disk !!")
+        # self._save_best_model()
 
-    def get_results(self) -> pd.DataFrame:
+    def get_results(self):
         results = pd.DataFrame(self.results)
         try:
             results.to_csv(os.path.join(RESULT_DIR_PATH, "results.csv"), index=False)
@@ -128,12 +129,12 @@ class ModelTrainer:
         return self.best_model
 
     def get_best_model_name(self) -> str:
-        return self.best_model_name
+        return str(self.best_model_name)
 
-    def _save_best_model(self):
-        try:
-            with open(MODEL_DIR_PATH, "wb") as f:
-                pickle.dump(self.best_model, f)
-            logger.info(f"✅ Best model '{self.best_model_name}' saved to {MODEL_DIR_PATH}")
-        except Exception as e:
-            logger.error(f"❌ Failed to save the model: {e}")
+    # def _save_best_model(self):
+    #     try:
+    #         with open(MODEL_DIR_PATH, "wb") as f:
+    #             pickle.dump(self.best_model, f)
+    #         logger.info(f"✅ Best model '{self.best_model_name}' saved to {MODEL_DIR_PATH}")
+    #     except Exception as e:
+    #         logger.error(f"❌ Failed to save the model: {e}")
