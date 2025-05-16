@@ -41,3 +41,9 @@ MODEL_DIR_PATH = Path(os.path.join(CURRENT_PATH,MODEL_DIR,MODEL_NAME))
 
 PREPROCESSOR_NAME = 'Preprocessor.joblib'
 PREPROCESSOR_DIR_PATH = Path(os.path.join(CURRENT_PATH,MODEL_DIR,PREPROCESSOR_NAME))
+
+ENCODER_NAME = 'OHE_Encoder.joblib'
+ENCODER_DIR_PATH = Path(os.path.join(CURRENT_PATH,MODEL_DIR,ENCODER_NAME))
+
+TRF_DF_NAME = 'data/external/trf_df.csv'
+TRF_DF_DIR = Path(os.path.join(CURRENT_PATH,TRF_DF_NAME))

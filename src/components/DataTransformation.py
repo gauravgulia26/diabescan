@@ -8,7 +8,9 @@ from src.constants import (
     RAW_DATA_FILE_DIR,
     TRAIN_PROCESSED_FILE_NAME,
     TEST_PROCESSED_FILE_NAME,
-    PREPROCESSOR_DIR_PATH
+    PREPROCESSOR_DIR_PATH,
+    ENCODER_DIR_PATH,
+    TRF_DF_DIR
 )
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OrdinalEncoder, LabelEncoder, OneHotEncoder
@@ -20,6 +22,7 @@ from pydantic import BaseModel, Field, ConfigDict, validate_arguments, Validatio
 from typing import List, Any
 import numpy as np
 import os
+import joblib
 
 
 class TransformData(BaseModel):
@@ -70,99 +73,77 @@ class TransformData(BaseModel):
         trf = self.ApplyTransformation()
         df, x, y = self.read_data()
         data = trf.fit_transform(df)
+        Encoder = trf.named_transformers_["One Hot Transformation"]
+        joblib.dump(Encoder, ENCODER_DIR_PATH)
+        logger.info(f"Encoder Saved Successfully at {ENCODER_DIR_PATH}")
         labels = trf.get_feature_names_out()
         logger.info("Transformation Applied Successfully !!")
         trf_df = pd.DataFrame(data=data, columns=labels)
         le = LabelEncoder()
-        trf_df["remainder__class"] = le.fit_transform(trf_df["remainder__class"])
+        trf_df[trf_df.columns[-1]] = le.fit_transform(trf_df[trf_df.columns[-1]])
+        # trf_df["remainder__class"] = le.fit_transform(trf_df["remainder__class"])
         logger.info("Processed Dataframe Created Successfully")
+        trf_df = trf_df.drop(columns=trf_df.columns[-3])
+        trf_df.to_csv(TRF_DF_DIR,index=False)
         return trf_df
 
     def SplitData(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         trf_df = self.CreateDataframe()
         X = trf_df.drop(columns=trf_df.columns[-1])
         y = trf_df[trf_df.columns[-1]]
+
+        # Validate that the target variable is discrete
+        if not pd.api.types.is_integer_dtype(y):
+            raise ValueError("Target variable must be discrete. Ensure proper encoding.")
+
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
         logger.info("Data Successfully Splitted into Training and Testing Set")
         return X_train, X_test, y_train, y_test
 
-    def ApplyScaling(self):
+    def ApplyScaling(self, preprocessor_path: Path = PREPROCESSOR_DIR_PATH):
         X_train, X_test, y_train, y_test = self.SplitData()
         scaler = StandardScaler()
         X_train = scaler.fit_transform(X_train)
         X_test = scaler.transform(X_test)
         logger.info("Scaling Applied Successfully")
+        joblib.dump(scaler, preprocessor_path)
+        logger.info(f"Standard Scaler saved successfully at {preprocessor_path}")
 
         return X_train, X_test, y_train, y_test
 
     def CreateTrainTestSet(self):
         X_train, X_test, y_train, y_test = self.ApplyScaling()
-        training_set = pd.DataFrame(np.hstack([X_train, y_train.values.reshape(-1, 1)]))
-        test_set = pd.DataFrame(np.hstack([X_test, y_test.values.reshape(-1, 1)]))
+        # training_set = pd.DataFrame(X_train)  # Exclude dependent feature
+        # test_set = pd.DataFrame(X_test)  # Exclude dependent feature
         logger.info("Train Test df created Successfully !!")
 
-        return training_set, test_set
+        return X_train, X_test, y_train, y_test
 
     def SaveProcessedData(self):
-        train_df, test_df = self.CreateTrainTestSet()
+        X_train, X_test, y_train, y_test = self.CreateTrainTestSet()
         os.makedirs(TRAIN_PROCESSED_FILE_DIR, exist_ok=True)
         os.makedirs(TEST_PROCESSED_FILE_DIR, exist_ok=True)
-        try:
-            train_df.to_csv(
-                os.path.join(TRAIN_PROCESSED_FILE_DIR, TRAIN_PROCESSED_FILE_NAME), index=False
-            )
-            test_df.to_csv(
-                os.path.join(TEST_PROCESSED_FILE_DIR, TEST_PROCESSED_FILE_NAME), index=False
-            )
-        except Exception as e:
-            logger.error(e)
-        logger.info("Training Set and Testing set has been saved Successfully")
+        # try:
+        #     train_df.to_csv(
+        #         os.path.join(TRAIN_PROCESSED_FILE_DIR, TRAIN_PROCESSED_FILE_NAME), index=False
+        #     )
+        #     test_df.to_csv(
+        #         os.path.join(TEST_PROCESSED_FILE_DIR, TEST_PROCESSED_FILE_NAME), index=False
+        #     )
+        # except Exception as e:
+        #     logger.error(e)
+        # logger.info("Training Set and Testing set has been saved Successfully")
 
-        return train_df, test_df
+        return X_train, X_test, y_train, y_test
 
     def InitiateTransformation(self):
         try:
-            train_df, test_df = self.SaveProcessedData()
-            self.get_preprocessor_pipeline()
+            X_train, X_test, y_train, y_test = self.SaveProcessedData()
         except Exception as e:
             logger.error(e)
         else:
             logger.info("Transformation Finished Successfully !!")
-            return train_df, test_df
+            return X_train, X_test, y_train, y_test
+        
 
-    def get_preprocessor_pipeline(self, save_path: Path = PREPROCESSOR_DIR_PATH):
-        """Returns and optionally saves the fitted preprocessor pipeline that can be used for future predictions
-        
-        Args:
-            save_path (str, optional): Path where to save the pipeline. Defaults to None.
-            If not provided, pipeline will be saved in models/preprocessor.joblib
-        
-        Returns:
-            Pipeline: A scikit-learn Pipeline containing all preprocessing steps
-        """
-        try:
-            # Get the transformers
-            trf = self.CreateColumnTransformer()
-            df, _, _ = self.read_data()
-            
-            # Create a pipeline with column transformer and label encoder
-            le = LabelEncoder()
-            preprocessor = Pipeline([
-                ('column_transformer', trf),
-                ('scaler', StandardScaler())
-            ])
-            
-            # Fit the pipeline on the data (excluding the target column)
-            X = df.drop(columns=['class'])
-            preprocessor.fit(X)
-            
-            # Save the pipeline
-            from joblib import dump
-            dump(preprocessor, save_path)
-            logger.info(f"Preprocessor pipeline saved successfully at {save_path}")
-            
-            return preprocessor
-            
-        except Exception as e:
-            logger.error(f"Error in creating/saving preprocessor pipeline: {str(e)}")
-            raise CustomException(error_message=e)
+obj = TransformData().InitiateTransformation()
