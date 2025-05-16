@@ -1,0 +1,37 @@
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+header, main, footer {
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+input, select {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#result {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Ensure high contrast ratios */
+.text-gray-700 {
+    color: #374151; /* WCAG-compliant dark gray */
+}
+
+.bg-teal-600 {
+    background-color: #0d9488; /* Accessible teal */
+}
+
+.bg-teal-900 {
+    background-color: #134e4a; /* Darker teal for footer */
+}

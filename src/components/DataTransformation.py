@@ -8,6 +8,7 @@ from src.constants import (
     RAW_DATA_FILE_DIR,
     TRAIN_PROCESSED_FILE_NAME,
     TEST_PROCESSED_FILE_NAME,
+    PREPROCESSOR_DIR_PATH
 )
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OrdinalEncoder, LabelEncoder, OneHotEncoder
@@ -122,8 +123,46 @@ class TransformData(BaseModel):
     def InitiateTransformation(self):
         try:
             train_df, test_df = self.SaveProcessedData()
+            self.get_preprocessor_pipeline()
         except Exception as e:
             logger.error(e)
         else:
             logger.info("Transformation Finished Successfully !!")
             return train_df, test_df
+
+    def get_preprocessor_pipeline(self, save_path: Path = PREPROCESSOR_DIR_PATH):
+        """Returns and optionally saves the fitted preprocessor pipeline that can be used for future predictions
+        
+        Args:
+            save_path (str, optional): Path where to save the pipeline. Defaults to None.
+            If not provided, pipeline will be saved in models/preprocessor.joblib
+        
+        Returns:
+            Pipeline: A scikit-learn Pipeline containing all preprocessing steps
+        """
+        try:
+            # Get the transformers
+            trf = self.CreateColumnTransformer()
+            df, _, _ = self.read_data()
+            
+            # Create a pipeline with column transformer and label encoder
+            le = LabelEncoder()
+            preprocessor = Pipeline([
+                ('column_transformer', trf),
+                ('scaler', StandardScaler())
+            ])
+            
+            # Fit the pipeline on the data (excluding the target column)
+            X = df.drop(columns=['class'])
+            preprocessor.fit(X)
+            
+            # Save the pipeline
+            from joblib import dump
+            dump(preprocessor, save_path)
+            logger.info(f"Preprocessor pipeline saved successfully at {save_path}")
+            
+            return preprocessor
+            
+        except Exception as e:
+            logger.error(f"Error in creating/saving preprocessor pipeline: {str(e)}")
+            raise CustomException(error_message=e)

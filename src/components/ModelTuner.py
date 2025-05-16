@@ -58,7 +58,7 @@ def objective(trial, best_model):
     return scores.mean()
 
 
-def optimize_svm(best_model, n_trials=50, study_name="svm_optuna_study", storage_path=None):
+def optimize_svm(best_model, n_trials=20, study_name="svm_optuna_study", storage_path=None):
     """Optimize SVM hyperparameters using Optuna."""
     if storage_path:
         storage = f"sqlite:///{storage_path}"

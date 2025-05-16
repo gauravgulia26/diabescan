@@ -13,6 +13,7 @@ from ucimlrepo import fetch_ucirepo
 import pandas as pd
 from pydantic import BaseModel, validate_arguments
 from src.constants import TARGET_FEATURE
+from src.exceptions import CustomException
 
 logger = CustomLogger().get_logger()
 
@@ -156,4 +157,30 @@ class DataUtils(BaseModel):
         X = df.drop(columns=TARGET_FEATURE)
         y = df[TARGET_FEATURE]
         return df,X,y
+    
+    @staticmethod
+    def load_preprocessor_pipeline(load_path: str = None):
+        """Loads a saved preprocessor pipeline
         
+        Args:
+            load_path (str, optional): Path to the saved pipeline. Defaults to models/preprocessor.joblib
+        
+        Returns:
+            Pipeline: The loaded preprocessing pipeline
+        """
+        try:
+            if load_path is None:
+                load_path = os.path.join('models', 'preprocessor.joblib')
+            
+            if not os.path.exists(load_path):
+                raise FileNotFoundError(f"No preprocessor pipeline found at {load_path}")
+            
+            from joblib import load
+            preprocessor = load(load_path)
+            logger.info(f"Preprocessor pipeline loaded successfully from {load_path}")
+            return preprocessor
+            
+        except Exception as e:
+            logger.error(f"Error in loading preprocessor pipeline: {str(e)}")
+            raise CustomException(error_message=e)
+    
