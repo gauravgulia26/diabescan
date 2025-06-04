@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/469935880321598937/0241705bd987467590df73fa0242b98b/artifacts
+end_time: 1749042433824
+entry_point_name: ''
+experiment_id: '469935880321598937'
+lifecycle_stage: active
+run_id: 0241705bd987467590df73fa0242b98b
+run_name: train_SVM
+run_uuid: 0241705bd987467590df73fa0242b98b
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749042430206
+status: 3
+tags: []
+user_id: gaurav

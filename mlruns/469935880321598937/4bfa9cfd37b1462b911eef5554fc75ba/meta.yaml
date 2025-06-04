@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/469935880321598937/4bfa9cfd37b1462b911eef5554fc75ba/artifacts
+end_time: 1749042266763
+entry_point_name: ''
+experiment_id: '469935880321598937'
+lifecycle_stage: active
+run_id: 4bfa9cfd37b1462b911eef5554fc75ba
+run_name: train_Gradient Boosting
+run_uuid: 4bfa9cfd37b1462b911eef5554fc75ba
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749042263114
+status: 3
+tags: []
+user_id: gaurav

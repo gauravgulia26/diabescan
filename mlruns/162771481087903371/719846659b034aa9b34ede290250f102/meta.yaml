@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/162771481087903371/719846659b034aa9b34ede290250f102/artifacts
+end_time: 1749042418358
+entry_point_name: ''
+experiment_id: '162771481087903371'
+lifecycle_stage: active
+run_id: 719846659b034aa9b34ede290250f102
+run_name: data_transformation
+run_uuid: 719846659b034aa9b34ede290250f102
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749042418230
+status: 3
+tags: []
+user_id: gaurav

@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/469935880321598937/83f4f9985560403bb55ca99c487ec146/artifacts
+end_time: 1749042578968
+entry_point_name: ''
+experiment_id: '469935880321598937'
+lifecycle_stage: active
+run_id: 83f4f9985560403bb55ca99c487ec146
+run_name: hyperparameter_optimization
+run_uuid: 83f4f9985560403bb55ca99c487ec146
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749042473171
+status: 4
+tags: []
+user_id: gaurav

@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/469935880321598937/60fad89c25be445587d3c8c3aa33d24f/artifacts
+end_time: 1749042284218
+entry_point_name: ''
+experiment_id: '469935880321598937'
+lifecycle_stage: active
+run_id: 60fad89c25be445587d3c8c3aa33d24f
+run_name: train_XGBoost
+run_uuid: 60fad89c25be445587d3c8c3aa33d24f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749042273697
+status: 3
+tags: []
+user_id: gaurav

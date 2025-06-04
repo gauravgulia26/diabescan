@@ -1,0 +1,6 @@
+artifact_location: mlflow-artifacts:/959859670818956347
+creation_time: 1749041837637
+experiment_id: '959859670818956347'
+last_update_time: 1749041837637
+lifecycle_stage: active
+name: diabetes_model_tuning

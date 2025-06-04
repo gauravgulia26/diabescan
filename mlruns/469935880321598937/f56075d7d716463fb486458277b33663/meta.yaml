@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/469935880321598937/f56075d7d716463fb486458277b33663/artifacts
+end_time: 1749042437251
+entry_point_name: ''
+experiment_id: '469935880321598937'
+lifecycle_stage: active
+run_id: f56075d7d716463fb486458277b33663
+run_name: train_KNN
+run_uuid: f56075d7d716463fb486458277b33663
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749042433839
+status: 3
+tags: []
+user_id: gaurav

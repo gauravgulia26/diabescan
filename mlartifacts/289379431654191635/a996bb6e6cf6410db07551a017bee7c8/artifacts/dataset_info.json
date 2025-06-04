@@ -1,0 +1,44 @@
+{
+  "columns": [
+    "age",
+    "gender",
+    "polyuria",
+    "polydipsia",
+    "sudden_weight_loss",
+    "weakness",
+    "polyphagia",
+    "genital_thrush",
+    "visual_blurring",
+    "itching",
+    "irritability",
+    "delayed_healing",
+    "partial_paresis",
+    "muscle_stiffness",
+    "alopecia",
+    "obesity",
+    "class"
+  ],
+  "dtypes": {
+    "age": "int64",
+    "gender": "object",
+    "polyuria": "object",
+    "polydipsia": "object",
+    "sudden_weight_loss": "object",
+    "weakness": "object",
+    "polyphagia": "object",
+    "genital_thrush": "object",
+    "visual_blurring": "object",
+    "itching": "object",
+    "irritability": "object",
+    "delayed_healing": "object",
+    "partial_paresis": "object",
+    "muscle_stiffness": "object",
+    "alopecia": "object",
+    "obesity": "object",
+    "class": "object"
+  },
+  "shape": [
+    520,
+    17
+  ]
+}

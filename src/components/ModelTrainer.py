@@ -44,7 +44,7 @@ class ModelTrainerConfig(BaseModel):
         allowed_metrics = {"accuracy", "precision", "recall", "f1_score", "roc_auc"}
         if v.lower() not in allowed_metrics:
             raise ValueError(f"scoring_metric must be one of {allowed_metrics}")
-        return v.lower()
+        return v.lower()  # Keep lowercase for internal use
 
 
 # Main class for training and evaluating models
@@ -106,16 +106,20 @@ class ModelTrainer:
 
                     # Calculate metrics
                     metrics = {
-                        "Model": name,
                         "Accuracy": accuracy_score(self.y_test, y_pred),
                         "Precision": precision_score(self.y_test, y_pred),
                         "Recall": recall_score(self.y_test, y_pred),
-                        "F1 Score": f1_score(self.y_test, y_pred),
-                        "ROC AUC": roc_auc_score(self.y_test, y_proba),
+                        "F1_Score": f1_score(self.y_test, y_pred),
+                        "ROC_AUC": roc_auc_score(self.y_test, y_proba),
                     }
 
-                    # Log metrics to MLflow
+                    # Store results with model name for DataFrame
+                    results_entry = metrics.copy()
+                    results_entry["Model"] = name
+
+                    # Log metrics and parameters to MLflow
                     mlflow.log_metrics(metrics)
+                    mlflow.log_param("model_type", name)
 
                     # Log model
                     signature = infer_signature(self.X_train, y_pred)
@@ -123,10 +127,10 @@ class ModelTrainer:
                         model,
                         f"model_{name}",
                         signature=signature,
-                        input_example=self.X_train.iloc[:5],
+                        input_example=self.X_train[:5],
                     )
 
-                    self.results.append(metrics)
+                    self.results.append(results_entry)
 
             self._select_best_model()
 
@@ -138,7 +142,7 @@ class ModelTrainer:
                     self.best_model,
                     "best_model",
                     signature=signature,
-                    input_example=self.X_train.iloc[:5],
+                    input_example=self.X_train[:5],
                 )
 
                 # Log results DataFrame
@@ -147,7 +151,15 @@ class ModelTrainer:
 
     def _select_best_model(self):
         df_results = pd.DataFrame(self.results)
-        metric_column = self.config.scoring_metric.replace("_", " ").title()
+        # Use the exact metric name from our metrics dictionary
+        metric_mapping = {
+            "f1_score": "F1_Score",
+            "accuracy": "Accuracy",
+            "precision": "Precision",
+            "recall": "Recall",
+            "roc_auc": "ROC_AUC",
+        }
+        metric_column = metric_mapping[self.config.scoring_metric.lower()]
         df_sorted = df_results.sort_values(by=metric_column, ascending=False).reset_index(
             drop=True
         )
@@ -158,7 +170,13 @@ class ModelTrainer:
         # Log best model metrics
         with mlflow.start_run(run_name="best_model_selection", nested=True):
             best_metrics = df_sorted.iloc[0].to_dict()
-            mlflow.log_metrics(best_metrics)
+            # Filter out non-numeric values for MLflow metrics
+            numeric_metrics = {
+                k: v
+                for k, v in best_metrics.items()
+                if isinstance(v, (int, float)) and k != "Model"
+            }
+            mlflow.log_metrics(numeric_metrics)
             mlflow.log_param("best_model_name", self.best_model_name)
 
         logger.info(f"Training Completed, Best Model is {self.get_best_model_name()}")

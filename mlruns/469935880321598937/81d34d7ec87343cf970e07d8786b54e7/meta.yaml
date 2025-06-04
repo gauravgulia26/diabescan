@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/469935880321598937/81d34d7ec87343cf970e07d8786b54e7/artifacts
+end_time: 1749042020652
+entry_point_name: ''
+experiment_id: '469935880321598937'
+lifecycle_stage: active
+run_id: 81d34d7ec87343cf970e07d8786b54e7
+run_name: train_Decision Tree
+run_uuid: 81d34d7ec87343cf970e07d8786b54e7
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749042015353
+status: 3
+tags: []
+user_id: gaurav
