@@ -2,6 +2,13 @@
 
 A Machine Learning System responsible for Predict Diabetes in a Patient
 
+# Click to Watch the Demo
+
+[Click to watch the demo](https://github.com/user-attachments/assets/92641760-dc17-4b86-911c-431cf44a52b7)
+
+
+
+
 ## Project Organization
 
 ```
