@@ -25,3 +25,5 @@ pydantic
 xgboost
 optuna
 flask
+mlflow 
+dvc
