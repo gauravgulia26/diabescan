@@ -1,0 +1,8 @@
+{
+  "train_mean": -1.4356332214980473e-17,
+  "train_std": 1.0,
+  "train_class_distribution": [
+    139,
+    209
+  ]
+}

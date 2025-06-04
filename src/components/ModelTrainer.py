@@ -16,6 +16,9 @@ from src.constants import RESULT_DIR_PATH, MODEL_DIR_PATH
 from src.logger.custom_logger import logger
 import warnings
 import pickle
+import mlflow
+import mlflow.sklearn
+from mlflow.models.signature import infer_signature
 
 # Suppress warnings for cleaner output
 warnings.filterwarnings("ignore")
@@ -54,6 +57,10 @@ class ModelTrainer:
         y_test: pd.Series,
         config: Optional[ModelTrainerConfig] = None,
     ):
+        # Set up MLflow
+        mlflow.set_tracking_uri("http://localhost:5000")
+        mlflow.set_experiment("diabetes_model_training")
+
         self.X_train = X_train
         self.y_train = y_train
         self.X_test = X_test
@@ -79,26 +86,64 @@ class ModelTrainer:
 
     def train_and_evaluate(self):
         logger.info("Starting Training !!")
-        for name, model in self.models.items():
-            model.fit(self.X_train, self.y_train)
-            y_pred = model.predict(self.X_test)
-            y_proba = (
-                model.predict_proba(self.X_test)[:, 1]
-                if hasattr(model, "predict_proba")
-                else y_pred
-            )
+        with mlflow.start_run(run_name="model_training"):
+            for name, model in self.models.items():
+                # Start a child run for each model
+                with mlflow.start_run(run_name=f"train_{name}", nested=True):
+                    # Log model parameters
+                    mlflow.log_params(model.get_params())
 
-            metrics = {
-                "Model": name,
-                "Accuracy": accuracy_score(self.y_test, y_pred),
-                "Precision": precision_score(self.y_test, y_pred),
-                "Recall": recall_score(self.y_test, y_pred),
-                "F1 Score": f1_score(self.y_test, y_pred),
-                "ROC AUC": roc_auc_score(self.y_test, y_proba),
-            }
-            self.results.append(metrics)
+                    # Train model
+                    model.fit(self.X_train, self.y_train)
 
-        self._select_best_model()
+                    # Make predictions
+                    y_pred = model.predict(self.X_test)
+                    y_proba = (
+                        model.predict_proba(self.X_test)[:, 1]
+                        if hasattr(model, "predict_proba")
+                        else y_pred
+                    )
+
+                    # Calculate metrics
+                    metrics = {
+                        "Model": name,
+                        "Accuracy": accuracy_score(self.y_test, y_pred),
+                        "Precision": precision_score(self.y_test, y_pred),
+                        "Recall": recall_score(self.y_test, y_pred),
+                        "F1 Score": f1_score(self.y_test, y_pred),
+                        "ROC AUC": roc_auc_score(self.y_test, y_proba),
+                    }
+
+                    # Log metrics to MLflow
+                    mlflow.log_metrics(metrics)
+
+                    # Log model
+                    signature = infer_signature(self.X_train, y_pred)
+                    mlflow.sklearn.log_model(
+                        model,
+                        f"model_{name}",
+                        signature=signature,
+                        input_example=self.X_train.iloc[:5],
+                    )
+
+                    self.results.append(metrics)
+
+            self._select_best_model()
+
+            # Log the best model separately
+            if self.best_model is not None:
+                mlflow.log_param("best_model", self.best_model_name)
+                signature = infer_signature(self.X_train, self.best_model.predict(self.X_train))
+                mlflow.sklearn.log_model(
+                    self.best_model,
+                    "best_model",
+                    signature=signature,
+                    input_example=self.X_train.iloc[:5],
+                )
+
+                # Log results DataFrame
+                if hasattr(self, "results_df"):
+                    mlflow.log_dict(self.results_df.to_dict(), "model_comparison.json")
 
     def _select_best_model(self):
         df_results = pd.DataFrame(self.results)
@@ -110,14 +155,23 @@ class ModelTrainer:
         self.best_model = self.models[self.best_model_name]
         self.results_df = df_sorted
 
+        # Log best model metrics
+        with mlflow.start_run(run_name="best_model_selection", nested=True):
+            best_metrics = df_sorted.iloc[0].to_dict()
+            mlflow.log_metrics(best_metrics)
+            mlflow.log_param("best_model_name", self.best_model_name)
+
         logger.info(f"Training Completed, Best Model is {self.get_best_model_name()}")
         self.get_results()
-        logger.info('Procedding to Tune Best Model')
+        logger.info("Proceeding to Tune Best Model")
 
     def get_results(self):
         results = pd.DataFrame(self.results)
         try:
-            results.to_csv(os.path.join(RESULT_DIR_PATH, "results.csv"), index=False)
+            results_path = os.path.join(RESULT_DIR_PATH, "results.csv")
+            results.to_csv(results_path, index=False)
+            # Log results file as artifact
+            mlflow.log_artifact(results_path, "training_results")
         except Exception as e:
             logger.error(e)
         else:

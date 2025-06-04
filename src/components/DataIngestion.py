@@ -6,6 +6,8 @@ import pandas as pd
 import os
 from pathlib import Path
 from joblib import Memory
+import mlflow
+import mlflow.sklearn
 
 
 class DataIngestion:
@@ -15,6 +17,7 @@ class DataIngestion:
         cfg_file_path: str = CFG_FILE_PATH,
         current_path: str = CURRENT_PATH,
         raw_data_file_dir: str = RAW_DATA_FILE_DIR,
+        experiment_name: str = "diabetes_data_ingestion",
     ):
         """Initialize the DataIngestion class with necessary paths and logger."""
         self.__logger = CustomLogger().get_logger()
@@ -22,6 +25,10 @@ class DataIngestion:
         self.CFG_FILE_PATH = cfg_file_path
         self.CURRENT_PATH = current_path
         self.RAW_DATA_FILE_DIR = raw_data_file_dir
+
+        # Set up MLflow
+        mlflow.set_tracking_uri("http://localhost:5000")
+        mlflow.set_experiment(experiment_name)
 
     def fetch_data(self, repo_id):
         """Fetch data from UCI ML repository by ID."""
@@ -76,32 +83,55 @@ class DataIngestion:
 
     def ingest_data(self, repo_id=529):
         """Main method to orchestrate the data ingestion process."""
-        try:
-            # Step 1: Fetch data
-            x, y = self.fetch_data(repo_id)
-            self.__logger.info("Data fetched successfully")
+        with mlflow.start_run(run_name="data_ingestion"):
+            try:
+                # Step 1: Fetch data
+                x, y = self.fetch_data(repo_id)
+                self.__logger.info("Data fetched successfully")
+                mlflow.log_param("repo_id", repo_id)
 
-            # Step 2: Create DataFrame
-            df = self.create_dataframe(x, y)
-            self.__logger.info("DataFrame created successfully")
+                # Step 2: Create DataFrame
+                df = self.create_dataframe(x, y)
+                self.__logger.info("DataFrame created successfully")
+                mlflow.log_metric("dataset_size", len(df))
+                mlflow.log_metric("num_features", df.shape[1] - 1)  # Excluding target column
 
-            # Step 3: Load configuration
-            yaml_file = self.load_config()
-            self.__logger.info("Configuration loaded successfully")
+                # Step 3: Load configuration
+                yaml_file = self.load_config()
+                self.__logger.info("Configuration loaded successfully")
 
-            # Step 4: Create directory
-            full_path = self.create_directory(yaml_file)
-            self.__logger.info(f"Directory created at {full_path}")
+                # Step 4: Create directory
+                full_path = self.create_directory(yaml_file)
+                self.__logger.info(f"Directory created at {full_path}")
 
-            # Step 5: Save data
-            self.save_data(df)
-            self.__logger.info(f"Data saved successfully at {RAW_DATA_FILE_DIR}")
+                # Step 5: Save data
+                self.save_data(df)
+                self.__logger.info(f"Data saved successfully at {RAW_DATA_FILE_DIR}")
 
-        except CustomException as ce:
-            self.__logger.error("Data ingestion failed")
-            return ce
-        except Exception as e:
-            self.__logger.error(f"Unexpected error: {str(e)}")
-            return CustomException(error_message=e)
-        else:
-            self.__logger.info("Data Ingestion Completed Successfully!!")
+                # Log data statistics
+                mlflow.log_metrics(
+                    {
+                        "missing_values": df.isnull().sum().sum(),
+                        "duplicate_rows": df.duplicated().sum(),
+                    }
+                )
+
+                # Log dataset description
+                dataset_info = {
+                    "columns": list(df.columns),
+                    "dtypes": df.dtypes.astype(str).to_dict(),
+                    "shape": df.shape,
+                }
+                mlflow.log_dict(dataset_info, "dataset_info.json")
+
+            except CustomException as ce:
+                self.__logger.error("Data ingestion failed")
+                mlflow.log_param("error", str(ce))
+                return ce
+            except Exception as e:
+                self.__logger.error(f"Unexpected error: {str(e)}")
+                mlflow.log_param("error", str(e))
+                return CustomException(error_message=e)
+            else:
+                self.__logger.info("Data Ingestion Completed Successfully!!")
+                mlflow.log_param("status", "success")

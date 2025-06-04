@@ -1,0 +1,6 @@
+artifact_location: mlflow-artifacts:/162771481087903371
+creation_time: 1749041543223
+experiment_id: '162771481087903371'
+last_update_time: 1749041543223
+lifecycle_stage: active
+name: diabetes_data_transformation

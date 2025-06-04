@@ -10,7 +10,7 @@ from src.constants import (
     TEST_PROCESSED_FILE_NAME,
     PREPROCESSOR_DIR_PATH,
     ENCODER_DIR_PATH,
-    TRF_DF_DIR
+    TRF_DF_DIR,
 )
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OrdinalEncoder, LabelEncoder, OneHotEncoder
@@ -23,11 +23,19 @@ from typing import List, Any
 import numpy as np
 import os
 import joblib
+import mlflow
+import mlflow.sklearn
 
 
 class TransformData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     loader: DataUtils = Field(description="Loader to load Utilities Function", default=DataUtils())
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Set up MLflow
+        mlflow.set_tracking_uri("http://localhost:5000")
+        mlflow.set_experiment("diabetes_data_transformation")
 
     def read_data(self):
         """Function to load the df and split into x and y
@@ -84,7 +92,7 @@ class TransformData(BaseModel):
         # trf_df["remainder__class"] = le.fit_transform(trf_df["remainder__class"])
         logger.info("Processed Dataframe Created Successfully")
         trf_df = trf_df.drop(columns=trf_df.columns[-3])
-        trf_df.to_csv(TRF_DF_DIR,index=False)
+        trf_df.to_csv(TRF_DF_DIR, index=False)
         return trf_df
 
     def SplitData(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
@@ -137,13 +145,62 @@ class TransformData(BaseModel):
         return X_train, X_test, y_train, y_test
 
     def InitiateTransformation(self):
-        try:
-            X_train, X_test, y_train, y_test = self.SaveProcessedData()
-        except Exception as e:
-            logger.error(e)
-        else:
-            logger.info("Transformation Finished Successfully !!")
-            return X_train, X_test, y_train, y_test
-        
+        with mlflow.start_run(run_name="data_transformation"):
+            try:
+                X_train, X_test, y_train, y_test = self.SaveProcessedData()
+
+                # Log dataset shapes
+                mlflow.log_params(
+                    {
+                        "train_samples": X_train.shape[0],
+                        "test_samples": X_test.shape[0],
+                        "n_features": X_train.shape[1],
+                        "test_size": 0.33,
+                        "random_state": 42,
+                    }
+                )
+
+                # Log feature names
+                mlflow.log_dict(
+                    {
+                        "feature_names": (
+                            list(X_train.columns)
+                            if hasattr(X_train, "columns")
+                            else [f"feature_{i}" for i in range(X_train.shape[1])]
+                        )
+                    },
+                    "feature_names.json",
+                )
+
+                # Log data statistics
+                train_stats = {
+                    "train_mean": (
+                        np.mean(X_train).tolist()
+                        if isinstance(X_train, np.ndarray)
+                        else X_train.mean().tolist()
+                    ),
+                    "train_std": (
+                        np.std(X_train).tolist()
+                        if isinstance(X_train, np.ndarray)
+                        else X_train.std().tolist()
+                    ),
+                    "train_class_distribution": np.bincount(y_train).tolist(),
+                }
+                mlflow.log_dict(train_stats, "train_statistics.json")
+
+                # Log transformation artifacts
+                mlflow.log_artifact(ENCODER_DIR_PATH, "encoders")
+                mlflow.log_artifact(PREPROCESSOR_DIR_PATH, "preprocessor")
+
+            except Exception as e:
+                logger.error(e)
+                mlflow.log_param("error", str(e))
+                mlflow.log_param("status", "failed")
+                raise e
+            else:
+                logger.info("Transformation Finished Successfully !!")
+                mlflow.log_param("status", "success")
+                return X_train, X_test, y_train, y_test
+
 
 obj = TransformData().InitiateTransformation()

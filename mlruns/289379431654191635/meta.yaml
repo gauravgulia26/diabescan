@@ -1,0 +1,6 @@
+artifact_location: mlflow-artifacts:/289379431654191635
+creation_time: 1749041543726
+experiment_id: '289379431654191635'
+last_update_time: 1749041543726
+lifecycle_stage: active
+name: diabetes_data_ingestion
